@@ -564,7 +564,7 @@ class SwinTransformer(nn.Module):
         return x
 
 
-def swin_tiny_patch4_window7_224(num_classes: int = 1000, **kwargs):
+def swin_tiny_patch4_window7_224(num_classes: int = 100, **kwargs):
     # trained ImageNet-1K
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth
     model = SwinTransformer(in_chans=3,
@@ -674,3 +674,12 @@ def swin_large_patch4_window12_384_in22k(num_classes: int = 21841, **kwargs):
                             num_classes=num_classes,
                             **kwargs)
     return model
+
+
+
+if __name__ == '__main__':
+    input = torch.ones(1, 3, 224, 224)         #batch_size为1   (3 224 224)即表示输入图片尺寸
+    print(input.shape)
+    model = swin_tiny_patch4_window7_224() 
+    output = model(input)
+    print(output.shape)
