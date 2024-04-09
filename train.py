@@ -10,10 +10,14 @@ from my_dataset import MyDataSet
 from model import swin_tiny_patch4_window7_224 as create_model
 from utils import read_split_data, train_one_epoch, evaluate
 
+import subprocess
 
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
-
+    
+    result =subprocess.check_output(['git','rev-parse','--abbrev-ref','HEAD'])
+    branch_name =result.decode('utf-8').strip()
+    
     if os.path.exists("./weights") is False:
         os.makedirs("./weights")
 
