@@ -11,15 +11,21 @@ from model import swin_tiny_patch4_window7_224 as create_model
 from utils import read_split_data, train_one_epoch, evaluate
 
 import subprocess
+import datetime
 
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     
     result =subprocess.check_output(['git','rev-parse','--abbrev-ref','HEAD'])
     branch_name =result.decode('utf-8').strip()
+
+    now = datetime.datetime.now()  
+    formatted_datetime = now.strftime("%Y-%m-%d_%H_%M")  
     
-    if os.path.exists("./weights") is False:
-        os.makedirs("./weights")
+    dir_str = os.path.join(branch_name,formatted_datetime)
+
+    if os.path.exists("./weights/{}/".format(dir_str)) is False:
+        os.makedirs("./weights/{}/".format(dir_str))
 
     tb_writer = SummaryWriter()
 
@@ -106,7 +112,7 @@ def main(args):
         tb_writer.add_scalar(tags[3], val_acc, epoch)
         tb_writer.add_scalar(tags[4], optimizer.param_groups[0]["lr"], epoch)
 
-        torch.save(model.state_dict(), "./weights/model-{}.pth".format(epoch))
+        torch.save(model.state_dict(), "./weights/{}/model-{}.pth".format(dir_str,epoch))
 
 
 if __name__ == '__main__':
