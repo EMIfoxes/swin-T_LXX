@@ -12,7 +12,6 @@ from utils import read_split_data, train_one_epoch, evaluate
 
 import subprocess
 import datetime
-import shutil
 
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
