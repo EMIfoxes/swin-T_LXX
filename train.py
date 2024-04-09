@@ -12,6 +12,7 @@ from utils import read_split_data, train_one_epoch, evaluate
 
 import subprocess
 import datetime
+import shutil
 
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
@@ -90,7 +91,9 @@ def main(args):
 
     pg = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=5E-2)
-
+    
+    best_dir = 'nothing'
+    last_dir = 'nothing'
     for epoch in range(args.epochs):
         # train
         train_loss, train_acc = train_one_epoch(model=model,
@@ -111,8 +114,26 @@ def main(args):
         tb_writer.add_scalar(tags[2], val_loss, epoch)
         tb_writer.add_scalar(tags[3], val_acc, epoch)
         tb_writer.add_scalar(tags[4], optimizer.param_groups[0]["lr"], epoch)
+        
+        #保存最好一次的权重
+        if val_loss < args.min_loss_to_save:
+            
+            #删除上一次的model-best.pth
+            if os.path.isfile(best_dir):
+                os.remove(best_dir)
+            
+            args.min_loss_to_save = val_loss
+            best_dir = "./weights/{}/model-best_{}.pth".format(dir_str,epoch)
+            torch.save(model.state_dict(), best_dir)
+        
+        
+        #删除上一次的model-last.pth
+        if os.path.isfile(last_dir):
+            os.remove(last_dir)
 
-        torch.save(model.state_dict(), "./weights/{}/model-{}.pth".format(dir_str,epoch))
+        #保存最后一次的权重
+        last_dir =  "./weights/{}/model-last_{}.pth".format(dir_str,epoch)
+        torch.save(model.state_dict(), last_dir)
 
 
 if __name__ == '__main__':
@@ -133,6 +154,8 @@ if __name__ == '__main__':
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
+    # 当损失值小于n时，开始保存最佳模型权重
+    parser.add_argument('--min_loss_to_save',type=float,default=2)
 
     opt = parser.parse_args()
 
