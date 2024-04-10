@@ -676,10 +676,82 @@ def swin_large_patch4_window12_384_in22k(num_classes: int = 21841, **kwargs):
     return model
 
 
+'''------------------------KNNAttention模块-----------------------------'''
+class kNNAttention(nn.Module):
+    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.,topk=100):
+        super().__init__()
+        self.num_heads = num_heads
+        head_dim = dim // num_heads
+        # NOTE scale factor was wrong in my original version, can set manually to be compat with prev weights
+        self.scale = qk_scale or head_dim ** -0.5
+
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
+        self.topk = topk
+
+    def forward(self, x):
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]   # make torchscript happy (cannot use tensor as tuple)
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        # the core code block
+        mask=torch.zeros(B,self.num_heads,N,N,device=x.device,requires_grad=False)
+        index=torch.topk(attn,k=self.topk,dim=-1,largest=True)[1]
+        mask.scatter_(-1,index,1.)
+        attn=torch.where(mask>0, attn,torch.full_like(attn, float('-inf')))
+        # end of the core code block
+
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
+
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = self.proj(x)
+        x = self.proj_drop(x)
+        return x
+    
+
+'''------------------------SE模块-----------------------------'''
+#全局平均池化+1*1卷积核+ReLu+1*1卷积核+Sigmoid
+class SE_Block(nn.Module):
+    def __init__(self, inchannel, ratio=16):
+        super(SE_Block, self).__init__()
+        # 全局平均池化(Fsq操作)
+        self.gap = nn.AdaptiveAvgPool2d((1, 1))
+        # 两个全连接层(Fex操作)
+        self.fc = nn.Sequential(
+            nn.Linear(inchannel, inchannel // ratio, bias=False),  # 从 c -> c/r
+            nn.ReLU(),
+            nn.Linear(inchannel // ratio, inchannel, bias=False),  # 从 c/r -> c
+            nn.Sigmoid()
+        )
+ 
+    def forward(self, x):
+            # 读取批数据图片数量及通道数
+            b, c, h, w = x.size()
+            # Fsq操作：经池化后输出b*c的矩阵
+            y = self.gap(x).view(b, c)
+            # Fex操作：经全连接层输出（b，c，1，1）矩阵
+            y = self.fc(y).view(b, c, 1, 1)
+            # Fscale操作：将得到的权重乘以原来的特征图x
+            return x * y.expand_as(x)
 
 if __name__ == '__main__':
-    input = torch.ones(1, 3, 224, 224)         #batch_size为1   (3 224 224)即表示输入图片尺寸
-    print(input.shape)
-    model = swin_tiny_patch4_window7_224() 
+
+    input = torch.ones(1, 3, 224, 224) 
+    
+    print(input.size())
+   
+   
+    model = SwinTransformer(in_chans=3,
+                            patch_size=4,
+                            window_size=7,
+                            embed_dim=96,
+                            depths=(2, 2, 6, 2),
+                            num_heads=(3, 6, 12, 24),
+                            num_classes=10,
+                            )
     output = model(input)
+
     print(output.shape)
