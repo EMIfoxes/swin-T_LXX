@@ -539,7 +539,9 @@ class SwinTransformer(nn.Module):
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
 
         self.apply(self._init_weights)
-
+        #添加SE模块
+        self.se = SE_Block(inchannel=3) 
+        self.kNNAttention = kNNAttention(dim=96)                  
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
             nn.init.trunc_normal_(m.weight, std=.02)
@@ -551,9 +553,12 @@ class SwinTransformer(nn.Module):
 
     def forward(self, x):
         # x: [B, L, C]
+        x = self.se(x)    #添加SE模块
+        
         x, H, W = self.patch_embed(x)
+        x = self.kNNAttention(x)  #添加kNNAttention模块
         x = self.pos_drop(x)
-
+       
         for layer in self.layers:
             x, H, W = layer(x, H, W)
 
@@ -753,5 +758,4 @@ if __name__ == '__main__':
                             num_classes=10,
                             )
     output = model(input)
-
     print(output.shape)
