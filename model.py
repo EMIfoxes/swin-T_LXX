@@ -539,9 +539,8 @@ class SwinTransformer(nn.Module):
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
 
         self.apply(self._init_weights)
-        #添加SE模块
-        self.se = SE_Block(inchannel=3) 
-        self.kNNAttention = kNNAttention(dim=96)                  
+
+
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
             nn.init.trunc_normal_(m.weight, std=.02)
@@ -553,9 +552,8 @@ class SwinTransformer(nn.Module):
 
     def forward(self, x):
         # x: [B, L, C]
-        # x = self.se(x)    #添加SE模块
+
         x, H, W = self.patch_embed(x)
-        # x = self.kNNAttention(x)  #添加kNNAttention模块
         x = self.pos_drop(x)
        
         for layer in self.layers:
@@ -566,6 +564,7 @@ class SwinTransformer(nn.Module):
         x = torch.flatten(x, 1)
         x = self.head(x)
         return x
+
 
 class My_SwinTransformer(nn.Module):
 
@@ -645,6 +644,8 @@ class My_SwinTransformer(nn.Module):
         x = torch.flatten(x, 1)
         x = self.head(x)
         return x
+    
+
 def swin_tiny_patch4_window7_224(num_classes: int = 100, **kwargs):
     # trained ImageNet-1K
     # https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth
@@ -817,6 +818,7 @@ class SE_Block(nn.Module):
             y = self.fc(y).view(b, c, 1, 1)
             # Fscale操作：将得到的权重乘以原来的特征图x
             return x * y.expand_as(x)
+
 
 if __name__ == '__main__':
 
