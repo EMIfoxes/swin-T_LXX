@@ -7,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 from my_dataset import MyDataSet
-from model import swin_tiny_patch4_window7_224 as create_model
+from model import swin_tiny_patch4_window7_224
 from utils import read_split_data, train_one_epoch, evaluate
 
 import subprocess
@@ -69,7 +69,7 @@ def main(args):
                                              num_workers=nw,
                                              collate_fn=val_dataset.collate_fn)
 
-    model = create_model(num_classes=args.num_classes).to(device)
+    model = swin_tiny_patch4_window7_224(num_classes=args.num_classes).to(device)
 
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
