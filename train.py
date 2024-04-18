@@ -7,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 from my_dataset import MyDataSet
-from model import swin_tiny_patch4_window7_224
+from model import swin_tiny_patch4_window7_224,SwinTransformer,My_SwinTransformer
 from utils import read_split_data, train_one_epoch, evaluate
 
 import subprocess
@@ -70,7 +70,14 @@ def main(args):
                                              pin_memory=True,
                                              num_workers=nw)
 
-    model = swin_tiny_patch4_window7_224(num_classes=args.num_classes).to(device)
+    model = model = My_SwinTransformer(in_chans=3,
+                        patch_size=4,
+                        window_size=7,
+                        embed_dim=96,
+                        depths=(2, 2, 6, 2),
+                        num_heads=(3, 6, 12, 24),
+                        num_classes=5,
+                        ).to(device)
 
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)

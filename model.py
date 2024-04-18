@@ -619,7 +619,8 @@ class My_SwinTransformer(nn.Module):
         self.apply(self._init_weights)
         #添加SE模块
         self.se = SE_Block(inchannel=3) 
-        self.kNNAttention = kNNAttention(dim=96)                  
+        self.kNNAttention = kNNAttention(dim=96)         
+
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
             nn.init.trunc_normal_(m.weight, std=.02)
@@ -795,8 +796,8 @@ class kNNAttention(nn.Module):
     
 
 '''------------------------SE模块-----------------------------'''
-#全局平均池化+1*1卷积核+ReLu+1*1卷积核+Sigmoid
 class SE_Block(nn.Module):
+    #全局平均池化+1*1卷积核+ReLu+1*1卷积核+Sigmoid
     def __init__(self, inchannel, ratio=16):
         super(SE_Block, self).__init__()
         # 全局平均池化(Fsq操作)
