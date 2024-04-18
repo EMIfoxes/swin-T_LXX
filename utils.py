@@ -35,7 +35,7 @@ def read_split_data(root: str, val_rate: float = 0.2):
         cla_path = os.path.join(root, cla)
         # 遍历获取supported支持的所有文件路径
         images = [os.path.join(root, cla, i) for i in os.listdir(cla_path)
-                  if os.path.splitext(i)[-1] in supported]
+                  if os.path.splitext(i)[-1] in supported][:50]          #每个类仅选取50张图片
         # 排序，保证各平台顺序一致
         images.sort()
         # 获取该类别对应的索引

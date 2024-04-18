@@ -7,11 +7,14 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
 from my_dataset import MyDataSet
-from model import swin_tiny_patch4_window7_224 as create_model
+from model import swin_tiny_patch4_window7_224,SwinTransformer,My_SwinTransformer
 from utils import read_split_data, train_one_epoch, evaluate
 
 import subprocess
 import datetime
+
+import warnings
+warnings.filterwarnings("ignore")
 
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
@@ -59,17 +62,22 @@ def main(args):
                                                batch_size=batch_size,
                                                shuffle=True,
                                                pin_memory=True,
-                                               num_workers=nw,
-                                               collate_fn=train_dataset.collate_fn)
+                                               num_workers=nw)
 
     val_loader = torch.utils.data.DataLoader(val_dataset,
                                              batch_size=batch_size,
                                              shuffle=False,
                                              pin_memory=True,
-                                             num_workers=nw,
-                                             collate_fn=val_dataset.collate_fn)
+                                             num_workers=nw)
 
-    model = create_model(num_classes=args.num_classes).to(device)
+    model = model = My_SwinTransformer(in_chans=3,
+                        patch_size=4,
+                        window_size=7,
+                        embed_dim=96,
+                        depths=(2, 2, 6, 2),
+                        num_heads=(3, 6, 12, 24),
+                        num_classes=5,
+                        ).to(device)
 
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)
