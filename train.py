@@ -6,9 +6,9 @@ import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms
 
-from my_dataset import MyDataSet
-from model import swin_tiny_patch4_window7_224 as create_model
-from utils import read_split_data, train_one_epoch, evaluate
+from my_dataset import MyDataSet,UAV_DataSet
+from model import swin_tiny_patch4_window7_224 as create_model ,seq_SwinTransformer
+from utils import read_split_data, train_one_epoch, evaluate,my_read_split_data
 
 
 def main(args):
@@ -19,28 +19,28 @@ def main(args):
 
     tb_writer = SummaryWriter()
 
-    train_images_path, train_images_label, val_images_path, val_images_label = read_split_data(args.data_path)
+    train_images_path, train_images_label, val_images_path, val_images_label = my_read_split_data(args.data_path)
 
-    img_size = 224
-    data_transform = {
-        "train": transforms.Compose([transforms.RandomResizedCrop(img_size),
-                                     transforms.RandomHorizontalFlip(),
-                                     transforms.ToTensor(),
-                                     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]),
-        "val": transforms.Compose([transforms.Resize(int(img_size * 1.143)),
-                                   transforms.CenterCrop(img_size),
-                                   transforms.ToTensor(),
-                                   transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
+    # img_size = 224
+    # data_transform = {
+    #     "train": transforms.Compose([transforms.RandomResizedCrop(img_size),
+    #                                  transforms.RandomHorizontalFlip(),
+    #                                  transforms.ToTensor(),
+    #                                  transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]),
+    #     "val": transforms.Compose([transforms.Resize(int(img_size * 1.143)),
+    #                                transforms.CenterCrop(img_size),
+    #                                transforms.ToTensor(),
+    #                                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
 
     # 实例化训练数据集
-    train_dataset = MyDataSet(images_path=train_images_path,
+    train_dataset = UAV_DataSet(images_path=train_images_path,
                               images_class=train_images_label,
-                              transform=data_transform["train"])
+                              )
 
     # 实例化验证数据集
-    val_dataset = MyDataSet(images_path=val_images_path,
+    val_dataset = UAV_DataSet(images_path=val_images_path,
                             images_class=val_images_label,
-                            transform=data_transform["val"])
+                            )
 
     batch_size = args.batch_size
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, 8])  # number of workers
@@ -49,17 +49,24 @@ def main(args):
                                                batch_size=batch_size,
                                                shuffle=True,
                                                pin_memory=True,
-                                               num_workers=nw,
-                                               collate_fn=train_dataset.collate_fn)
+                                               num_workers=nw,)
+                                               
 
     val_loader = torch.utils.data.DataLoader(val_dataset,
                                              batch_size=batch_size,
                                              shuffle=False,
                                              pin_memory=True,
-                                             num_workers=nw,
-                                             collate_fn=val_dataset.collate_fn)
+                                             num_workers=nw, )
+                                           
 
-    model = create_model(num_classes=args.num_classes).to(device)
+    model = seq_SwinTransformer(in_chans=1,
+                                patch_size=4,
+                                window_size=7,
+                                embed_dim=96,
+                                depths=(2, 2, 6, 2),
+                                num_heads=(3, 6, 12, 24),
+                                num_classes=2,
+                                ).to(device)
 
     if args.weights != "":
         assert os.path.exists(args.weights), "weights file: '{}' not exist.".format(args.weights)

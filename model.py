@@ -773,9 +773,8 @@ def swin_large_patch4_window12_384_in22k(num_classes: int = 21841, **kwargs):
 if __name__ == '__main__':
     from torchinfo import summary
     
-    seq_input = torch.ones(1, 16000).to('cuda:0')
     input = torch.ones(2, 1, 125, 128).to('cuda:0')
-
+    print(type(input))
     model = seq_SwinTransformer(in_chans=1,
                             patch_size=4,
                             window_size=7,

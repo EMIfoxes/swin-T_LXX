@@ -40,7 +40,7 @@ class UAV_DataSet(Dataset):
     def __getitem__(self, item):
        
         data = hdf5storage.loadmat(self.images_path[item])['single_data']
-        data = torch.tensor(data).reshape(125,128).unsqueeze(0)
+        data = torch.tensor(data,dtype=torch.float32).reshape(125,128).unsqueeze(0)
         label = self.images_class[item]
 
         if self.transform is not None:

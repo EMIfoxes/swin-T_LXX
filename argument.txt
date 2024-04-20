@@ -1,0 +1,1 @@
+python train.py --num_classes 2 --epochs 1 --batch-size 2 --data-path 'D:/DL_Data/UVA'
