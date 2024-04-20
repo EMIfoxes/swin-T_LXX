@@ -4,3 +4,4 @@ python train.py --num_classes 9 --epochs 10 --batch-size 8 --data-path 'D:/DL_Da
 
 other
 python train.py --num_classes 9 --epochs 10 --batch-size 8 --data-path 'D:/LXX/Data/UVA' 
+python train.py --num_classes 9 --epochs 10 --batch-size 8 --data-path 'D:/LXX/Data/UVA' --weights "D:/LXX/Pretrained_model_weights/swin_tiny_patch4_window7_224.pth"
