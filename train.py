@@ -78,7 +78,7 @@ def main(args):
                                 embed_dim=96,
                                 depths=(2, 2, 6, 2),
                                 num_heads=(3, 6, 12, 24),
-                                num_classes=2,
+                                num_classes=args.num_classes,
                                 ).to(device)
 
     if args.weights != "":
