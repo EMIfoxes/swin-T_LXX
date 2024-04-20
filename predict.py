@@ -9,12 +9,12 @@ import matplotlib.pyplot as plt
 from model import swin_tiny_patch4_window7_224 as create_model,seq_SwinTransformer
 import hdf5storage
 
-def main():
+def main(args):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
     # load image
-    img_path = "D:/LXX/Data/UVA/MF3/MF3_91122.mat"
+    img_path = args.img_path
     assert os.path.exists(img_path), "file: '{}' dose not exist.".format(img_path)
 
     data = hdf5storage.loadmat(img_path)['single_data']
@@ -35,11 +35,11 @@ def main():
                                 embed_dim=96,
                                 depths=(2, 2, 6, 2),
                                 num_heads=(3, 6, 12, 24),
-                                num_classes=9,
+                                num_classes=args.num_classes,
                                 ).to(device)
 
     # load model weights
-    model_weight_path = "weights/seq_predict/2024-04-20_20_46/model-best_7.pth"
+    model_weight_path = args.model_weight_path
     model.load_state_dict(torch.load(model_weight_path, map_location=device))
     model.eval()
     with torch.no_grad():
@@ -58,4 +58,13 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    # 训练设备类型
+    parser.add_argument('--img_path', default='D:/DL_Data/UVA/MF4/MF4_91719.mat', type=str)
+    # 训练数据集的根目录
+    parser.add_argument('--model_weight_path', default='weights/seq_predict/2024-04-20_21_56/model-last_0.pth', type=str)
+    # 检测目标类别数(不包含背景)
+    parser.add_argument('--num_classes', default=9, type=int, help='num_classes')
+    args = parser.parse_args()
+    main(args)

@@ -1,6 +1,8 @@
-python train.py --num_classes 2 --epochs 10 --batch-size 8 --data-path 'D:/DL_Data/UVA' --weights "D:/Pretrained_model_weights/swin_tiny_patch4_window7_224.pth"
-python train.py --num_classes 4 --epochs 10 --batch-size 8 --data-path 'D:/DL_Data/UVA' 
+python train.py --num_classes 9 --epochs 10 --batch-size 8 --data-path 'D:/DL_Data/UVA' --weights "D:/Pretrained_model_weights/swin_tiny_patch4_window7_224.pth"
 python train.py --num_classes 9 --epochs 10 --batch-size 8 --data-path 'D:/DL_Data/UVA' 
+python train.py --num_classes 9 --epochs 1 --batch-size 8 --data-path 'D:/DL_Data/UVA' 
+
+python predict.py --img_path "D:/DL_Data/UVA/MF4/MF4_91719.mat" --model_weight_path "weights/seq_predict/2024-04-20_21_56/model-last_0.pth" --num_classes 9
 
 other
 python train.py --num_classes 9 --epochs 10 --batch-size 8 --data-path 'D:/LXX/Data/UVA' 
