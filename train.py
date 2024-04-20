@@ -99,7 +99,7 @@ def main(args):
     optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=5E-2)
 
     # 将模型写入tensorboard
-    init_img = torch.zeros((1, 3, 224, 224), device=device)
+    init_img = torch.zeros((1, 1, 125, 128), device=device)
     tb_writer.add_graph(model, init_img)
 
     best_dir = 'nothing'
