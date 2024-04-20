@@ -72,7 +72,7 @@ def main(args):
                                              num_workers=nw, )
                                            
 
-    model = seq_SwinTransformer(in_chans=1,
+    model = seq_SwinTransformer(in_chans=3,
                                 patch_size=4,
                                 window_size=7,
                                 embed_dim=96,

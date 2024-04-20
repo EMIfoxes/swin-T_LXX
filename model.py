@@ -612,6 +612,7 @@ class seq_SwinTransformer(nn.Module):
         dpr = [x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))]  # stochastic depth decay rule
 
         # build layers
+        self.conv = nn.Conv2d(in_channels=1,out_channels=3,kernel_size=1,stride=1)
         self.layers = nn.ModuleList()
         for i_layer in range(self.num_layers):
             # 注意这里构建的stage和论文图中有些差异
@@ -647,6 +648,7 @@ class seq_SwinTransformer(nn.Module):
 
     def forward(self, x):
         # x: [B, L, C]
+        x = self.conv(x)
         x, H, W = self.patch_embed(x)
         x = self.pos_drop(x)
 
@@ -775,7 +777,7 @@ if __name__ == '__main__':
     
     input = torch.ones(2, 1, 125, 128).to('cuda:0')
     print(type(input))
-    model = seq_SwinTransformer(in_chans=1,
+    model = seq_SwinTransformer(in_chans=3,
                             patch_size=4,
                             window_size=7,
                             embed_dim=96,

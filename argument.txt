@@ -3,4 +3,4 @@ python train.py --num_classes 4 --epochs 10 --batch-size 8 --data-path 'D:/DL_Da
 python train.py --num_classes 9 --epochs 10 --batch-size 8 --data-path 'D:/DL_Data/UVA' 
 
 other
-python train.py --num_classes 9 --epochs 10 --batch-size 8 --data-path 'D:/DL_Data/UVA' 
+python train.py --num_classes 9 --epochs 10 --batch-size 8 --data-path 'D:/LXX/Data/UVA' 
