@@ -1,7 +1,7 @@
 from PIL import Image
 import torch
 from torch.utils.data import Dataset
-
+import hdf5storage
 
 class MyDataSet(Dataset):
     """自定义数据集"""
@@ -25,6 +25,28 @@ class MyDataSet(Dataset):
             img = self.transform(img)
 
         return img, label
+
+class UAV_DataSet(Dataset):
+    """自定义数据集"""
+
+    def __init__(self, images_path: list, images_class: list, transform=None):
+        self.images_path = images_path
+        self.images_class = images_class
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.images_path)
+
+    def __getitem__(self, item):
+       
+        data = hdf5storage.loadmat(self.images_path[item])['single_data']
+        data = torch.tensor(data,dtype=torch.float32).reshape(125,128).unsqueeze(0)
+        label = self.images_class[item]
+
+        if self.transform is not None:
+            data = self.transform(data)
+
+        return data, label
 
     @staticmethod
     def collate_fn(batch):
