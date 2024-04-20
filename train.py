@@ -10,12 +10,22 @@ from my_dataset import MyDataSet,UAV_DataSet
 from model import swin_tiny_patch4_window7_224 as create_model ,seq_SwinTransformer
 from utils import read_split_data, train_one_epoch, evaluate,my_read_split_data
 
+import subprocess
+import datetime
 
 def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+    
+    result =subprocess.check_output(['git','rev-parse','--abbrev-ref','HEAD'])
+    branch_name =result.decode('utf-8').strip()
 
-    if os.path.exists("./weights") is False:
-        os.makedirs("./weights")
+    now = datetime.datetime.now()  
+    formatted_datetime = now.strftime("%Y-%m-%d_%H_%M")  
+    
+    dir_str = os.path.join(branch_name,formatted_datetime)
+
+    if os.path.exists("./weights/{}/".format(dir_str)) is False:
+        os.makedirs("./weights/{}/".format(dir_str))
 
     tb_writer = SummaryWriter()
 
@@ -88,6 +98,12 @@ def main(args):
     pg = [p for p in model.parameters() if p.requires_grad]
     optimizer = optim.AdamW(pg, lr=args.lr, weight_decay=5E-2)
 
+    # 将模型写入tensorboard
+    init_img = torch.zeros((1, 3, 224, 224), device=device)
+    tb_writer.add_graph(model, init_img)
+
+    best_dir = 'nothing'
+    last_dir = 'nothing'
     for epoch in range(args.epochs):
         # train
         train_loss, train_acc = train_one_epoch(model=model,
@@ -108,8 +124,26 @@ def main(args):
         tb_writer.add_scalar(tags[2], val_loss, epoch)
         tb_writer.add_scalar(tags[3], val_acc, epoch)
         tb_writer.add_scalar(tags[4], optimizer.param_groups[0]["lr"], epoch)
+        
+        #保存最好一次的权重
+        if val_loss < args.min_loss_to_save:
+            
+            #删除上一次的model-best.pth
+            if os.path.isfile(best_dir):
+                os.remove(best_dir)
+            
+            args.min_loss_to_save = val_loss
+            best_dir = "./weights/{}/model-best_{}.pth".format(dir_str,epoch)
+            torch.save(model.state_dict(), best_dir)
+        
+        
+        #删除上一次的model-last.pth
+        if os.path.isfile(last_dir):
+            os.remove(last_dir)
 
-        torch.save(model.state_dict(), "./weights/model-{}.pth".format(epoch))
+        #保存最后一次的权重
+        last_dir =  "./weights/{}/model-last_{}.pth".format(dir_str,epoch)
+        torch.save(model.state_dict(), last_dir)
 
 
 if __name__ == '__main__':
@@ -130,6 +164,8 @@ if __name__ == '__main__':
     # 是否冻结权重
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
+    # 当损失值小于n时，开始保存最佳模型权重
+    parser.add_argument('--min_loss_to_save',type=float,default=2)
 
     opt = parser.parse_args()
 
