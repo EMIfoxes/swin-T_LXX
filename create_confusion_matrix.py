@@ -10,9 +10,9 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from prettytable import PrettyTable
 
-from utils import read_split_data
-from my_dataset import MyDataSet
-from model import swin_base_patch4_window12_384_in22k as create_model
+from utils import read_split_data,my_read_split_data
+from my_dataset import MyDataSet,UAV_DataSet
+from model import swin_base_patch4_window12_384_in22k as create_model,seq_SwinTransformer
 
 
 class ConfusionMatrix(object):
@@ -85,19 +85,19 @@ def main(args):
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     print(f"using device: {device}")
 
-    _, _, val_images_path, val_images_label = read_split_data(args.data_path)
+    _, _, val_images_path, val_images_label = my_read_split_data(args.data_path,val_rate=0.2)
 
-    img_size = 384
-    data_transform = {
-        "val": transforms.Compose([transforms.Resize(int(img_size * 1.143)),
-                                   transforms.CenterCrop(img_size),
-                                   transforms.ToTensor(),
-                                   transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
+    # img_size = 384
+    # data_transform = {
+    #     "val": transforms.Compose([transforms.Resize(int(img_size * 1.143)),
+    #                                transforms.CenterCrop(img_size),
+    #                                transforms.ToTensor(),
+    #                                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
 
     # 实例化验证数据集
-    val_dataset = MyDataSet(images_path=val_images_path,
-                            images_class=val_images_label,
-                            transform=data_transform["val"])
+    val_dataset = UAV_DataSet(images_path=val_images_path,
+                            images_class=val_images_label,)
+                            
 
     nw = min([os.cpu_count(), args.batch_size if args.batch_size > 1 else 0, 8])  # number of workers
     print('Using {} dataloader workers every process'.format(nw))
@@ -106,10 +106,17 @@ def main(args):
                                              batch_size=args.batch_size,
                                              shuffle=False,
                                              pin_memory=True,
-                                             num_workers=nw,
-                                             collate_fn=val_dataset.collate_fn)
+                                             num_workers=nw)
+                                            
 
-    model = create_model(num_classes=args.num_classes)
+    model = seq_SwinTransformer(in_chans=3,
+                                patch_size=4,
+                                window_size=7,
+                                embed_dim=96,
+                                depths=(2, 2, 6, 2),
+                                num_heads=(3, 6, 12, 24),
+                                num_classes=args.num_classes,
+                                ).to(device)
     # load pretrain weights
     assert os.path.exists(args.weights), "cannot find {} file".format(args.weights)
     model.load_state_dict(torch.load(args.weights, map_location=device))
@@ -137,16 +144,16 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--num_classes', type=int, default=5)
-    parser.add_argument('--batch-size', type=int, default=2)
+    parser.add_argument('--num_classes', type=int, default=9)
+    parser.add_argument('--batch-size', type=int, default=8)
 
     # 数据集所在根目录
     # http://download.tensorflow.org/example_images/flower_photos.tgz
     parser.add_argument('--data-path', type=str,
-                        default="/data/flower_photos")
+                        default="D:/DL_Data/UVA")
 
     # 训练权重路径
-    parser.add_argument('--weights', type=str, default='./weights/model-19.pth',
+    parser.add_argument('--weights', type=str, default='weights/seq_predict/weight/model-best_65.pth',
                         help='initial weights path')
     # 是否冻结权重
     parser.add_argument('--device', default='cuda:0', help='device id (i.e. 0 or 0,1 or cpu)')
